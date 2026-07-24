@@ -544,7 +544,13 @@ async def main():
 
             columns, rows = run_query(pg_cursor, sql)
             answer = generate_nl_answer_streamed(user_question, columns, rows)
-            session.record_turn(user_question, sql, answer_summary=answer)
+            session.record_turn(
+                user_question,
+                sql,
+                answer_summary=answer,
+                result_columns=list(columns),
+                result_rows=rows,
+            )
             print()
 
         except Exception as e:

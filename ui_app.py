@@ -251,7 +251,13 @@ def _handle_question(question: str) -> None:
             answer, answer_usage = generate_nl_answer(
                 question, columns, rows, openai_client=oai
             )
-            session.record_turn(question, sql, answer_summary=answer)
+            session.record_turn(
+                question,
+                sql,
+                answer_summary=answer,
+                result_columns=list(columns),
+                result_rows=rows,
+            )
             token_lines = [
                 line
                 for line in (

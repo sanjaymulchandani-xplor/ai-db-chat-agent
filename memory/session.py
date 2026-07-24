@@ -36,6 +36,19 @@ _SQL_USER_ID_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Column names (normalized) > entity keys when reading query results
+_RESULT_COLUMN_MAP = {
+    "email": "email",
+    "user_email": "email",
+    "guest_email": "email",
+    "user_id": "user_id",
+    "full_name": "full_name",
+    "first_name": "first_name",
+    "last_name": "last_name",
+    "location_id": "location_id",
+    "location_name": "location_name",
+}
+
 
 @dataclass
 class SessionMemory:
@@ -105,6 +118,48 @@ class SessionMemory:
         if sql_user:
             self.entities["user_id"] = int(sql_user.group(1))
 
+    def ingest_answer_text(self, answer: Optional[str]) -> None:
+        """Pull emails (and similar) out of the NL answer."""
+        if not answer:
+            return
+        email = _EMAIL_RE.search(answer)
+        if email:
+            self.entities["email"] = email.group(1).lower()
+
+    def ingest_result_rows(
+        self,
+        columns: Optional[List[str]],
+        rows: Optional[List[Any]],
+    ) -> None:
+        """Update entities from the first result row (e.g. after 'top user' queries)."""
+        if not columns or not rows:
+            return
+        row = rows[0]
+        if row is None:
+            return
+        # psycopg2 rows may be tuples
+        values = list(row)
+        for col, value in zip(columns, values):
+            if value is None:
+                continue
+            key = _RESULT_COLUMN_MAP.get(str(col).strip().lower())
+            if not key:
+                continue
+            if key == "email":
+                self.entities["email"] = str(value).lower()
+            elif key == "user_id":
+                try:
+                    self.entities["user_id"] = int(value)
+                except (TypeError, ValueError):
+                    pass
+            elif key == "location_id":
+                try:
+                    self.entities["location_id"] = int(value)
+                except (TypeError, ValueError):
+                    pass
+            else:
+                self.entities[key] = str(value)
+
     def record_turn(
         self,
         question: str,
@@ -112,9 +167,13 @@ class SessionMemory:
         answer_summary: Optional[str] = None,
         *,
         error: Optional[str] = None,
+        result_columns: Optional[List[str]] = None,
+        result_rows: Optional[List[Any]] = None,
     ) -> None:
         """Store compact turn + refresh entities (+ persist to SQLite)."""
         self.extract_entities(question, sql)
+        self.ingest_answer_text(answer_summary)
+        self.ingest_result_rows(result_columns, result_rows)
         self.last_question = question
         self.last_sql = sql
         summary = answer_summary or error
@@ -198,8 +257,11 @@ class SessionMemory:
                 )
 
         lines.append(
-            "Use entities and recent turns to resolve follow-ups "
-            "(e.g. 'same for last month', 'what about location 7?', 'her email'). "
+            "Resolve pronouns and vague follow-ups from Known entities / recent turns: "
+            "'they/them/their/he/she/his/her/this user/that user/that person' "
+            "→ use email and/or user_id already listed. "
+            "Do NOT ask for email or user id when Known entities already has them. "
+            "Examples: 'what credits do they have?', 'her email', 'same for last month'. "
             "Do not invent entities that are not listed. "
             "Never copy prior_sql/prior_result formatting into your output — "
             "respond with JSON only."

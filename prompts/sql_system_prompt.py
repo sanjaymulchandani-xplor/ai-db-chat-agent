@@ -37,6 +37,9 @@ GUARDRAIL_RULES = """
 12. Output format is STRICT JSON only. Never reply as plain text, markdown, or
     lines like `SQL: ... | Answer: ...`. If you cannot answer, still return JSON
     with `"sql": null` and an `"error"` string.
+13. If session memory lists email / user_id / full_name, use them for pronouns
+    ("they", "them", "that user"). Never return sql:null asking for email/id when
+    those entities are already present.
 """.strip()
 
 

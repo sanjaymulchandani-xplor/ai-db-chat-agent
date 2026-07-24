@@ -207,7 +207,26 @@ ORDER BY total_credits DESC
 LIMIT 1;
 ```
 
-### Example 12 — Truly ambiguous (clarify only when no default exists)
+### Example 12 — Follow-up pronouns (use Known entities — do NOT re-ask for email/id)
+Session entities already include email='customer@marianatek.com' (and maybe user_id).
+Question: Which credits do they have? / What credits does that user have?
+SQL:
+```sql
+SELECT
+  c.name AS credit_pack_name,
+  ct.remaining_credits_cache AS remaining_credits,
+  ct.expiration_datetime
+FROM {s}.reservation_core_credittransaction ct
+JOIN {s}.reservation_core_credit c ON c.id = ct.credit_id
+JOIN {s}.user_core_marianauser u ON u.id = ct.user_id
+WHERE ct.parent_credit_transaction_id IS NULL
+  AND LOWER(u.email) = LOWER('customer@marianatek.com')
+  AND u.archived_at IS NULL
+ORDER BY ct.remaining_credits_cache DESC
+LIMIT 100;
+```
+
+### Example 13 — Truly ambiguous (clarify only when no default exists)
 Question: Who are the top customers?
 Response JSON:
 {{"reasoning": "No default: top by spend vs visits vs reservations are different. Ask which metric and time range.", "sql": null, "error": "Please clarify the metric (e.g. total spend, class visits) and time range."}}
