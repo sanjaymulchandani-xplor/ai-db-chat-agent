@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Environment / secrets
+.env
+
+# Local SQLite stores
+database/schema_store.db
+database/session_memory.db
+database/app_secrets.db
+*.db
