@@ -7,6 +7,10 @@ Ask natural-language questions about a Mariana tenant Postgres schema. The tool:
 3. Runs it
 4. Streams a plain-English answer
 
+## How does it work?
+
+https://github.com/user-attachments/assets/3088e923-cf6e-4c69-ad9f-746d5f6060e3
+
 ## Setup
 
 ```bash
