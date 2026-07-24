@@ -1,4 +1,4 @@
-# Mariana DB chat tool
+# DB chat tool (works for Mariana-Django DB with multi tenant support) 
 
 Ask natural-language questions about a Mariana tenant Postgres schema. The tool:
 
